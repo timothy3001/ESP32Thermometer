@@ -32,13 +32,13 @@ DallasTemperature sensors(&oneWire);
 float currentTemp = -127.0F;
 float currentBatteryStatus = -1.0F;
 
-String settingName;
+String settingSensorName;
 bool settingActivateReporting;
-String settingEditAddress;
+String settingBaseAddress;
 unsigned int settingIntervalSecs;
 bool settingPassive;
 bool settingReportBattery;
-String settingReportBatteryAddress;
+String settingReportBatteryAddressSuffix;
 
 unsigned long millisStart;
 
@@ -72,7 +72,7 @@ void readSettings()
     Preferences prefs;
     prefs.begin(PREFS_NAME, true);
 
-    settingName = prefs.getString(ID_NAME, getShortMac());
+    settingSensorName = prefs.getString(ID_NAME, getShortMac());
     settingActivateReporting = prefs.getBool(ID_ACTIVATE_REPORTING, false);
     settingEditAddress = prefs.getString(ID_EDIT_ADDRESS, "");
     settingIntervalSecs = prefs.getUInt(ID_INTERVAL_SECS, 1800);
@@ -88,7 +88,7 @@ void saveSettings()
     Preferences prefs;
     prefs.begin(PREFS_NAME, false);
 
-    prefs.putString(ID_NAME, settingName);
+    prefs.putString(ID_NAME, settingSensorName);
     prefs.putBool(ID_ACTIVATE_REPORTING, settingActivateReporting);
     prefs.putString(ID_EDIT_ADDRESS, settingEditAddress);
     prefs.putUInt(ID_INTERVAL_SECS, settingIntervalSecs);
@@ -107,18 +107,6 @@ void resetSettings()
     prefs.end();
 }
 
-bool checkHallForReset()
-{
-    int sum = 0;
-    for (int i = 0; i < TIMES_HALL_READ; i++)
-    {
-        sum += hallRead();
-        delay(DELAY_MS_HALL_READ);
-    }
-
-    int hallValueMean = abs(sum / TIMES_HALL_READ);
-    return (hallValueMean >= THRESHOLD_HALL);
-}
 
 void handleRootPage(AsyncWebServerRequest *request)
 {
@@ -393,7 +381,7 @@ void setup()
     Serial.println("Settings read!");
 
     Serial.println("Setting up wifi...");
-    if (!EspWifiSetup::setup(String("Thermometer-") + settingName, false, settingPassive) && settingPassive)
+    if (!EspWifiSetup::setup(String("Thermometer-") + settingSensorName, false, settingPassive) && settingPassive)
     {
         initiateDeepSleepForReporting();
     }
